@@ -28,7 +28,6 @@ export const register = expressAsyncHandler(async (req, res) => {
     });
     console.log(newUser._id.valueOf());
     const token = generateToken(newUser._id.valueOf());
-    // const obj = { newUser, token };
     if (newUser) {
       res.status(201).json({
         _id: newUser._id,
@@ -99,7 +98,7 @@ export const request = expressAsyncHandler(async (req, res) => {
     if (founduser === false) user.requestList.push(req.user._id);
     await user.save();
 
-    res.status(201).json({ message: "updation successfully" });
+    res.status(201).json({ message: "Updation successfully" });
   } catch (error) {
     res.status(500);
     throw new Error(error);
@@ -108,28 +107,48 @@ export const request = expressAsyncHandler(async (req, res) => {
 
 export const requestAccepted = expressAsyncHandler(async (req, res) => {
   const { userId } = req.body;
-  if (userId === req.user._id.valueOf())
-    throw new Error("User cannot accept his own request");
+  const { requestList, followerList } = req.user;
+
+  if (userId === req.user._id.valueOf()) throw new Error("Bad Request");
+
   try {
-    const user = await User.findById(userId);
-    if (!user) throw new Error("Invalid request");
-    let founduser = false;
-    const loggedUser = await User.findById(req.user._id);
-    loggedUser.requestList.forEach((data, index) => {
-      console.log(data.valueOf());
-      console.log(userId);
-      if (data.valueOf() === userId) {
-        loggedUser.requestList.splice(index, 1);
-        founduser = true;
-      }
-    });
-    console.log(founduser);
-    if (founduser === true) loggedUser.followerList.push(userId);
+    const isUserInRequestList = requestList.some((data) => data.equals(userId));
+    console.log(isUserInRequestList);
+    if (isUserInRequestList) {
+      req.user.requestList = req.user.requestList.filter(
+        (data) => !data.equals(userId)
+      );
+      req.user.followerList.push(userId);
+      console.log(req.user.requestList);
+    } else {
+      throw new Error("Internal Server Error");
+    }
+    await req.user.save();
 
-    if (founduser === false) throw new Error("Internal Server Error");
-    console.log(loggedUser);
+    const requestedUserToFollow = await User.findById(userId);
+    requestedUserToFollow.followingList.push(req.user._id);
 
-    await user.save();
+    await requestedUserToFollow.save();
+
+    res.status(201).json({ message: "Request Accepted" });
+  } catch (error) {
+    res.status(500);
+    throw new Error("Internal Server Error");
+  }
+});
+
+export const deleteRequest = expressAsyncHandler(async (req, res) => {
+  const { userId } = req.body;
+  const { requestList } = req.user;
+  if (userId === req.user._id.valueOf()) throw new Error("Bad Request");
+  try {
+    const isUserInRequestList = requestList.some((data) => data.equals(userId));
+    if (isUserInRequestList) {
+      req.user.requestList = requestList.filter((data) => !data.equals(userId));
+    } else {
+      throw new Error("Internal Server Error");
+    }
+    await req.user.save();
 
     res.status(201).json({ message: "updation successfully" });
   } catch (error) {
@@ -137,22 +156,59 @@ export const requestAccepted = expressAsyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-export const deleteRequest = expressAsyncHandler(async (req, res) => {
-  const { userId } = req.body;
+export const removeFollowing = expressAsyncHandler(async (req, res) => {
+  const { userId } = req.params;
   if (userId === req.user._id.valueOf()) throw new Error("Bad Request");
   try {
-    const user = await User.findById(req.user._id);
-    if (!user) throw new Error("Invalid request");
-    let founduser = false;
-    user.requestList.forEach((data, index) => {
-      if (data.valueOf() === userId.valueOf()) {
-        user.requestList.splice(index, 1);
-        founduser = true;
-      }
-    });
+    const isUserInFollowingList = req.user.followingList.some((data) =>
+      data.equals(userId)
+    );
+    if (isUserInFollowingList) {
+      req.user.followingList = req.user.followingList.filter(
+        (data) => !data.equals(userId)
+      );
+    } else {
+      throw new Error("Internal Server Error");
+    }
+    await req.user.save();
 
-    if (founduser === false) throw new Error("Bad request");
-    if (founduser === true) await user.save();
+    const followedUser = await User.findById(userId);
+    followedUser.followerList = followedUser.followerList.filter(
+      (data) => !data.equals(req.user._id)
+    );
+
+    await followedUser.save();
+
+    res.status(201).json({ message: "updation successfully" });
+  } catch (error) {
+    res.status(500);
+    throw new Error(error);
+  }
+});
+
+export const removeFollower = expressAsyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  if (userId === req.user._id.valueOf()) throw new Error("Bad Request");
+  try {
+    const isUserInFollowerList = req.user.followerList.some((data) =>
+      data.equals(userId)
+    );
+    if (isUserInFollowerList) {
+      req.user.followerList = req.user.followerList.filter(
+        (data) => !data.equals(userId)
+      );
+    } else {
+      throw new Error("Internal Server Error");
+    }
+    await req.user.save();
+
+    const user = await User.findById(userId);
+    user.followingList = user.followingList.filter(
+      (data) => !data.equals(req.user._id)
+    );
+
+    await user.save();
+
     res.status(201).json({ message: "updation successfully" });
   } catch (error) {
     res.status(500);

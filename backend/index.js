@@ -6,6 +6,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import { db } from "./misc/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import { errorHandler, notFound } from "./middleware/errorHandler.js";
 
 dotenv.config();
 const app = express();
@@ -17,6 +18,9 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.use("/user", userRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 await db();
 
