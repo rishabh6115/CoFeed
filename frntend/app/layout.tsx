@@ -1,13 +1,20 @@
-import SideBar from "@/Components/SideBar";
+// "use client";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({
+  weight: ["300", "400", "500", "600", "800"],
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "CoFeed",
   description: "Social Media Platform",
+  icons: {
+    icon: "./logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -17,9 +24,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <SideBar />
-        {children}
+      <body className={poppins.className}>
+        {children} <Toaster position="top-right" />
       </body>
     </html>
   );

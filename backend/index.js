@@ -22,7 +22,7 @@ app.use("/user", userRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-await db();
+db();
 
 const port = process.env.port || 5001;
 

@@ -26,7 +26,6 @@ export const register = expressAsyncHandler(async (req, res) => {
       location,
       pic,
     });
-    console.log(newUser._id.valueOf());
     const token = generateToken(newUser._id.valueOf());
     if (newUser) {
       res.status(201).json({
@@ -79,6 +78,12 @@ export const login = expressAsyncHandler(async (req, res) => {
     res.status(400);
     throw new Error(error);
   }
+});
+export const dummy = expressAsyncHandler(async (req, res) => {
+  res.status(201).json({
+    _id: 123,
+    name: "Rishabh",
+  });
 });
 
 export const request = expressAsyncHandler(async (req, res) => {
